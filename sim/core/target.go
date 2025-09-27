@@ -106,31 +106,29 @@ func NewTarget(options proto.Target, targetIndex int32) *Target {
 		},
 	}
 	target.GCD = target.NewTimer()
+
+	// -------- Classic+ Defaults (Epoch) --------
 	if target.Level == 0 {
-		target.Level = 73
+		target.Level = 63 // Classic/Epoch raid bosses
 	}
+	if target.stats[stats.Armor] == 0 {
+		target.stats[stats.Armor] = 3731 // Patchwerk-style armor baseline
+	}
+
+	// Classic baseline crit suppression / avoidance
 	if target.stats[stats.MeleeCrit] == 0 {
+		// Keep default crit rating scaling but tuned to lvl 63
 		target.stats[stats.MeleeCrit] = UnitLevelFloat64(target.Level, 0.05, 0.052, 0.054, 0.056) * MeleeCritRatingPerCritChance
 	}
 
-	if target.Level == 73 && options.SuppressDodge {
-		// Sunwell boss Dodge Suppression. -20% dodge and -5% miss chance.
-		target.PseudoStats.DodgeReduction += 0.2
-		target.PseudoStats.IncreasedMissChance -= 0.05
+	// Disable TBC/Sunwell dodge suppression (not applicable in Classic).
+	if target.Level == 63 {
+		target.PseudoStats.DodgeReduction = 0.0
+		target.PseudoStats.IncreasedMissChance = 0.0
 	}
 
-	target.PseudoStats.CanBlock = true
-	target.PseudoStats.CanParry = true
-	target.PseudoStats.ParryHaste = options.ParryHaste
-	target.PseudoStats.InFrontOfTarget = true
-	if target.Level == 73 && options.CanCrush {
-		target.PseudoStats.CanCrush = true
-	}
-
-	preset := GetPresetTargetWithID(options.Id)
-	if preset != nil && preset.AI != nil {
-		target.AI = preset.AI()
-	}
+	// No crushing blows in Classic.
+	target.PseudoStats.CrushChance = 0.0
 
 	return target
 }
